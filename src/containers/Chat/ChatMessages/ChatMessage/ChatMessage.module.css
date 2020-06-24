@@ -48,6 +48,7 @@
 .Content {
   padding: 18px 7px;
   word-wrap: break-word;
+  width: 92%;
 }
 
 .Content::after {
