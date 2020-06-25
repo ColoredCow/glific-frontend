@@ -3,11 +3,14 @@ import moment from 'moment';
 
 import styles from './ChatMessage.module.css';
 import { DialogBox } from '../../../../components/UI/DialogBox/DialogBox';
-import { useMutation } from '@apollo/client';
+import { useApolloClient, useMutation, useQuery } from '@apollo/client';
 import { SAVE_MESSAGE_TEMPLATE_MUTATION } from '../../../../graphql/mutations/MessageTemplate';
-import { IconButton, TextField, Dialog } from '@material-ui/core';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
-import { makeStyles } from '@material-ui/core/styles';
+import { IconButton, TextField } from '@material-ui/core';
+import { withStyles } from '@material-ui/core/styles';
+import ListIcon from '../../../../components/UI/ListIcon/ListIcon';
+import { NOTIFICATION } from '../../../../graphql/queries/Notification';
+import { setNotification } from '../../../../common/notification';
+import ToastMessage from '../../../../components/UI/ToastMessage/ToastMessage';
 
 export interface ChatMessageProps {
   id: number;
@@ -19,32 +22,37 @@ export interface ChatMessageProps {
   insertedAt: string;
 }
 
-const useStyles = makeStyles({
-  iconButton: {
-    position: 'absolute',
-    right: '5px',
-    top: '10px',
+const StyledIconButton = withStyles({
+  root: {
     padding: '0',
+    position: 'absolute',
+    top: '0',
+    right: '10px',
   },
-  vertIcon: {
-    fontSize: '18px',
-  },
-});
+})(IconButton);
+
 export const ChatMessage: React.SFC<ChatMessageProps> = (props) => {
-  const classes = useStyles();
+  const client = useApolloClient();
+
   let additionalClass = styles.Mine;
 
   // State to store editted message label.
   const [messageTemplate, setMessageTemplate] = useState<string | null>(null);
-  const [saveTemplate] = useMutation(SAVE_MESSAGE_TEMPLATE_MUTATION);
+
+  const [saveTemplate, { data }] = useMutation(SAVE_MESSAGE_TEMPLATE_MUTATION);
+
+  const message = useQuery(NOTIFICATION);
 
   if (props.receiver.id === props.contactId) {
     additionalClass = styles.Other;
   }
 
+  const closeToastMessage = () => {
+    setNotification(client, null);
+  };
+
   const showDialogBox = (props: any = {}) => {
     setMessageTemplate(props.body);
-    console.log(props);
   };
 
   const handleCloseButton = () => {
@@ -57,11 +65,13 @@ export const ChatMessage: React.SFC<ChatMessageProps> = (props) => {
         messageId: props.id,
         templateInput: {
           label: messageTemplate,
-          shortcode: 'my id 8',
+          shortcode: messageTemplate,
           languageId: '2',
         },
       },
     });
+    console.log(data);
+    setNotification(client, 'Message has been successfully saved as template');
     setMessageTemplate(null);
   };
 
@@ -76,8 +86,7 @@ export const ChatMessage: React.SFC<ChatMessageProps> = (props) => {
         autoFocus
         margin="dense"
         id="name"
-        label="Email Address"
-        type="email"
+        type="text"
         fullWidth
         value={messageTemplate}
         onChange={onChange}
@@ -97,17 +106,21 @@ export const ChatMessage: React.SFC<ChatMessageProps> = (props) => {
     );
   }
 
+  let toastMessage;
+  if (message.data && message.data.message) {
+    toastMessage = <ToastMessage message={message.data.message} handleClose={closeToastMessage} />;
+  }
+
   return (
     <div className={[styles.ChatMessage, additionalClass].join(' ')}>
-      <IconButton
+      <StyledIconButton
         aria-label="more"
         aria-controls="long-menu"
         aria-haspopup="true"
-        className={classes.iconButton}
         onClick={() => showDialogBox(props)}
       >
-        <MoreVertIcon className={classes.vertIcon} />
-      </IconButton>
+        <ListIcon icon="verticalMenu" fontSize="small" />
+      </StyledIconButton>
       <div className={styles.Content} data-testid="content">
         {props.body}
       </div>
@@ -115,6 +128,7 @@ export const ChatMessage: React.SFC<ChatMessageProps> = (props) => {
         {moment(props.insertedAt).format('HH:mm')}
       </div>
       {dialogBox}
+      {toastMessage}
     </div>
   );
 };
