@@ -11,7 +11,10 @@ import styles from './ChatMessages.module.css';
 import { ToastMessage } from '../../../components/UI/ToastMessage/ToastMessage';
 import { TextField, FormControlLabel, Checkbox } from '@material-ui/core';
 import { GET_CONVERSATION_MESSAGE_QUERY } from '../../../graphql/queries/Chat';
-import { CREATE_MESSAGE_MUTATION, CREATE_MESSAGE_TAG } from '../../../graphql/mutations/Chat';
+import {
+  CREATE_AND_SEND_MESSAGE_MUTATION,
+  CREATE_MESSAGE_TAG,
+} from '../../../graphql/mutations/Chat';
 import Loading from '../../../components/UI/Layout/Loading/Loading';
 import { GET_TAGS } from '../../../graphql/queries/Tag';
 
@@ -112,7 +115,7 @@ export const ChatMessages: React.SFC<ChatMessagesProps> = ({ contactId }) => {
     fetchPolicy: 'cache-first',
   });
 
-  const [createMessage] = useMutation(CREATE_MESSAGE_MUTATION);
+  const [createAndSendMessage] = useMutation(CREATE_AND_SEND_MESSAGE_MUTATION);
 
   // this function is called when the message is sent
   const sendMessageHandler = useCallback(
@@ -125,7 +128,7 @@ export const ChatMessages: React.SFC<ChatMessagesProps> = ({ contactId }) => {
         flow: 'OUTBOUND',
       };
 
-      createMessage({
+      createAndSendMessage({
         variables: { input: payload },
         optimisticResponse: {
           __typename: 'Mutation',
@@ -147,9 +150,9 @@ export const ChatMessages: React.SFC<ChatMessagesProps> = ({ contactId }) => {
 
           const messagesCopy = JSON.parse(JSON.stringify(messages));
 
-          if (data.createMessage.message) {
-            const message = data.createMessage.message;
-            messagesCopy.conversation.messages = messagesCopy.conversation.messages.concat(message);
+          if (data.createAndSendMessage) {
+            // add new message to messages array
+            messagesCopy.conversation.messages.push(data.createAndSendMessage);
 
             cache.writeQuery({
               query: GET_CONVERSATION_MESSAGE_QUERY,
@@ -160,7 +163,7 @@ export const ChatMessages: React.SFC<ChatMessagesProps> = ({ contactId }) => {
         },
       });
     },
-    [contactId, createMessage, queryVariables]
+    [contactId, createAndSendMessage, queryVariables]
   );
 
   if (loading) {
