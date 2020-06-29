@@ -1,6 +1,14 @@
-import React, { useCallback, useState } from 'react';
-import { useQuery, useMutation, useLazyQuery, useApolloClient } from '@apollo/client';
+import React, { useCallback, useState, useEffect } from 'react';
+import {
+  useQuery,
+  useMutation,
+  useLazyQuery,
+  useApolloClient,
+  InMemoryCache,
+} from '@apollo/client';
 import { Container, FormGroup } from '@material-ui/core';
+import { TextField, FormControlLabel, Checkbox } from '@material-ui/core';
+
 import { DialogBox } from '../../../components/UI/DialogBox/DialogBox';
 import { setNotification } from '../../../common/notification';
 import { NOTIFICATION } from '../../../graphql/queries/Notification';
@@ -9,14 +17,15 @@ import { ChatMessage } from './ChatMessage/ChatMessage';
 import { ChatInput } from './ChatInput/ChatInput';
 import styles from './ChatMessages.module.css';
 import { ToastMessage } from '../../../components/UI/ToastMessage/ToastMessage';
-import { TextField, FormControlLabel, Checkbox } from '@material-ui/core';
+import Loading from '../../../components/UI/Layout/Loading/Loading';
+
 import { GET_CONVERSATION_MESSAGE_QUERY } from '../../../graphql/queries/Chat';
 import {
   CREATE_AND_SEND_MESSAGE_MUTATION,
   CREATE_MESSAGE_TAG,
 } from '../../../graphql/mutations/Chat';
-import Loading from '../../../components/UI/Layout/Loading/Loading';
 import { GET_TAGS } from '../../../graphql/queries/Tag';
+import { MESSAGE_RECEIVED_SUBSCRIPTION } from '../../../graphql/subscriptions/Chat';
 
 export interface ChatMessagesProps {
   contactId: string;
@@ -110,7 +119,7 @@ export const ChatMessages: React.SFC<ChatMessagesProps> = ({ contactId }) => {
       limit: 25,
     },
   };
-  const { loading, error, data } = useQuery<any>(GET_CONVERSATION_MESSAGE_QUERY, {
+  const { subscribeToMore, loading, error, data } = useQuery<any>(GET_CONVERSATION_MESSAGE_QUERY, {
     variables: queryVariables,
     fetchPolicy: 'cache-first',
   });
@@ -165,6 +174,28 @@ export const ChatMessages: React.SFC<ChatMessagesProps> = ({ contactId }) => {
     },
     [contactId, createAndSendMessage, queryVariables]
   );
+
+  // handle subscription for message received
+  const getMessageResponse = useCallback(() => {
+    subscribeToMore({
+      document: MESSAGE_RECEIVED_SUBSCRIPTION,
+      variables: queryVariables,
+      updateQuery: (prev, { subscriptionData }) => {
+        if (!subscriptionData.data) return prev;
+        const newMessage = subscriptionData.data.receivedMessage;
+        return Object.assign({}, prev, {
+          conversation: {
+            messages: [newMessage, ...prev.conversation.messages],
+          },
+        });
+      },
+    });
+  }, [subscribeToMore, queryVariables]);
+
+  useEffect(() => {
+    console.log('useeffect called');
+    getMessageResponse();
+  }, [getMessageResponse]);
 
   if (loading) {
     return <Loading />;
