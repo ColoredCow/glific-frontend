@@ -9,5 +9,5 @@ FROM node:10-alpine
 RUN yarn global add serve
 WORKDIR /app
 COPY --from=builder /app/build .
-COPY /app/.env.example .env
+COPY --from=builder /app/build/.env.example  .env
 CMD ["serve", "-p", "3000", "-s", "."]doc
