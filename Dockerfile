@@ -9,4 +9,7 @@ FROM node:10-alpine
 RUN yarn global add serve
 WORKDIR /app
 COPY --from=builder /app/build .
+COPY ./docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["serve", "-p", "3000", "-s", "."]doc
