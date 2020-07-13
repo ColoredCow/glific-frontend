@@ -6,11 +6,18 @@ export const GET_CONVERSATION_QUERY = gql`
       contact {
         id
         name
+        phone
       }
       messages {
         id
         body
         insertedAt
+        receiver {
+          id
+        }
+        sender {
+          id
+        }
         tags {
           id
           label
@@ -26,6 +33,33 @@ export const GET_CONVERSATION_MESSAGE_QUERY = gql`
       contact {
         id
         name
+      }
+      messages {
+        id
+        body
+        insertedAt
+        receiver {
+          id
+        }
+        sender {
+          id
+        }
+        tags {
+          id
+          label
+        }
+      }
+    }
+  }
+`;
+
+export const FILTER_CONVERSATIONS_QUERY = gql`
+  query search($term: String!, $messageOpts: Opts!, $contactOpts: Opts!) {
+    search(term: $term, messageOpts: $messageOpts, contactOpts: $contactOpts) {
+      contact {
+        id
+        name
+        phone
       }
       messages {
         id
