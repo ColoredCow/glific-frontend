@@ -42,12 +42,3 @@ export const FILTER_TAGS = gql`
     }
   }
 `;
-
-export const GET_LANGUAGES = gql`
-  {
-    languages {
-      id
-      label
-    }
-  }
-`;

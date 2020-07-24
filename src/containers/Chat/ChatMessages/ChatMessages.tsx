@@ -15,7 +15,7 @@ import { ReactComponent as SelectIcon } from '../../../assets/images/icons/Selec
 import { ReactComponent as SearchIcon } from '../../../assets/images/icons/Search/Desktop.svg';
 
 import { DialogBox } from '../../../components/UI/DialogBox/DialogBox';
-import { setNotification } from '../../../common/notification';
+import { setNotification, setErrorMessage } from '../../../common/notification';
 import { ContactBar } from './ContactBar/ContactBar';
 import { ChatMessage } from './ChatMessage/ChatMessage';
 import { ChatInput } from './ChatInput/ChatInput';
@@ -193,7 +193,8 @@ export const ChatMessages: React.SFC<ChatMessagesProps> = ({ contactId }) => {
     return <Loading />;
   }
   if (called && error) {
-    return <p>Error :(</p>;
+    setErrorMessage(client, error);
+    return null;
   }
 
   // use contact id to filter if it is passed via url, else use the first conversation
@@ -224,18 +225,10 @@ export const ChatMessages: React.SFC<ChatMessagesProps> = ({ contactId }) => {
       // allConversations.conversations.splice(0, 0, data.conversation);
       // allConversations.conversations.unshift(data.conversation);
     }
-  }
-
-  // By default, have conversationInfo be the first thing if there is no contactId.
-  // If there is no first conversation (new user), then return that there are "No conversations".
-  if (conversationInfo.length === 0) {
-    conversationIndex = 0;
-    // No conversations case
-    if (allConversations.conversations.length === 0) {
-      conversationInfo = null;
-    } else {
-      conversationInfo = allConversations.conversations[conversationIndex];
-    }
+  } else if (contactId && allConversations.conversations.length === 0) {
+    // If there are no conversations (new user), then return that there are "No conversations"
+    // Case with !contactId and convos length == 0 taken care of in Chat.tsx
+    conversationInfo = null;
   }
 
   // In the case where there are no conversations, receiverId is not needed, so set to null.
@@ -409,7 +402,7 @@ export const ChatMessages: React.SFC<ChatMessagesProps> = ({ contactId }) => {
   // Check if there are conversation messages else display no messages
   if (messageList) {
     messageListContainer = (
-      <Container className={styles.MessageList} data-testid="messageContainer">
+      <Container className={styles.MessageList} maxWidth={false} data-testid="messageContainer">
         {messageList}
       </Container>
     );
@@ -422,7 +415,7 @@ export const ChatMessages: React.SFC<ChatMessagesProps> = ({ contactId }) => {
   }
 
   return (
-    <Container className={styles.ChatMessages} disableGutters>
+    <Container className={styles.ChatMessages} maxWidth={false} disableGutters>
       {dialogBox}
       {toastMessage}
       <ContactBar
