@@ -1,8 +1,8 @@
 version: "3.8"
 
 services:
-  uatreact:
-    container_name: glific-uat-react
+  glific-frontend:
+    container_name: "glific-frontend"
     build: .
     ports:
-        - "3002:3002"
+      - "3000:3000"
